@@ -31,6 +31,7 @@ type Settings struct {
 	FontFile   string  `json:"fontFile"`
 	FontScale  float64 `json:"fontScale"`
 	LineHeight float64 `json:"lineHeight"`
+	ParaGap    float64 `json:"paraGap"` // em between paragraphs
 	BoxOpacity float64 `json:"boxOpacity"`
 	Music      float64 `json:"music"`
 	Voice      float64 `json:"voice"`
@@ -45,6 +46,7 @@ func defaultSettings() Settings {
 		FontFamily: "Songti SC",
 		FontScale:  1,
 		LineHeight: 1.8,
+		ParaGap:    0.6,
 		BoxOpacity: 0.72,
 		Music:      0.8,
 		Voice:      1,

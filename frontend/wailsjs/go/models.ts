@@ -20,6 +20,7 @@ export namespace main {
 	    fontFile: string;
 	    fontScale: number;
 	    lineHeight: number;
+	    paraGap: number;
 	    boxOpacity: number;
 	    music: number;
 	    voice: number;
@@ -37,6 +38,7 @@ export namespace main {
 	        this.fontFile = source["fontFile"];
 	        this.fontScale = source["fontScale"];
 	        this.lineHeight = source["lineHeight"];
+	        this.paraGap = source["paraGap"];
 	        this.boxOpacity = source["boxOpacity"];
 	        this.music = source["music"];
 	        this.voice = source["voice"];

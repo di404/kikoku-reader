@@ -78,13 +78,13 @@ function layerEl(l, k) {
 }
 
 function drawLayers(layers, instant) {
-  const key = JSON.stringify(layers);
+  const key = JSON.stringify(layers || []);
   const stage = $("stage");
   if (key === state.lastLayers && !instant) return;
   state.lastLayers = key;
   const scene = document.createElement("div");
   scene.className = "scene";
-  for (const l of layers) scene.appendChild(layerEl(l, state.k));
+  for (const l of layers || []) scene.appendChild(layerEl(l, state.k));
   const old = [...stage.querySelectorAll(".scene")];
   if (instant || old.length === 0) {
     old.forEach((o) => o.remove());
@@ -126,7 +126,9 @@ function drawText(v) {
   }
   box.classList.remove("empty");
   $("speaker").textContent = st.speaker || "";
-  text.innerHTML = (v.before || "") + `<span class="new">${st.html}</span>`;
+  // Blank lines between paragraphs become a gap of adjustable height.
+  const html = (v.before || "") + `<span class="new">${st.html}</span>`;
+  text.innerHTML = html.replace(/\n(<span class="new">)?\n/g, '<span class="gap"></span>$1');
 }
 
 // ---------- stepping ----------
@@ -215,6 +217,7 @@ function applySettings() {
   root.setProperty("--font", `"${(s.fontFamily || "Songti SC").replace(/"/g, "")}"`);
   root.setProperty("--font-scale", s.fontScale);
   root.setProperty("--line", s.lineHeight);
+  root.setProperty("--para", s.paraGap);
   root.setProperty("--box", s.boxOpacity);
   applyFontSize();
   loadUserFont(s.fontFile);
@@ -241,7 +244,7 @@ function fillMenu() {
     sel.add(o);
   }
   $("fontCustom").value = known ? "" : s.fontFamily;
-  for (const id of ["fontScale", "lineHeight", "boxOpacity", "music", "voice", "effect"]) $(id).value = s[id];
+  for (const id of ["fontScale", "lineHeight", "paraGap", "boxOpacity", "music", "voice", "effect"]) $(id).value = s[id];
 
   const ol = $("scenes");
   ol.innerHTML = "";
@@ -259,7 +262,7 @@ function fillMenu() {
 function readMenu() {
   const s = state.settings;
   s.fontFamily = $("fontCustom").value.trim() || $("fontFamily").value;
-  for (const id of ["fontScale", "lineHeight", "boxOpacity", "music", "voice", "effect"]) s[id] = parseFloat($(id).value);
+  for (const id of ["fontScale", "lineHeight", "paraGap", "boxOpacity", "music", "voice", "effect"]) s[id] = parseFloat($(id).value);
   applySettings();
   clearTimeout(readMenu.t);
   readMenu.t = setTimeout(() => api().SaveSettings(s).then((r) => { state.settings = r; }), 250);
@@ -308,7 +311,7 @@ function wire() {
 
   $("close").onclick = closeMenu;
   $("menu").addEventListener("click", (e) => { if (e.target.id === "menu") closeMenu(); });
-  for (const id of ["fontFamily", "fontCustom", "fontScale", "lineHeight", "boxOpacity", "music", "voice", "effect"]) {
+  for (const id of ["fontFamily", "fontCustom", "fontScale", "lineHeight", "paraGap", "boxOpacity", "music", "voice", "effect"]) {
     $(id).addEventListener("input", readMenu);
   }
   $("fontFamily").addEventListener("change", () => { $("fontCustom").value = ""; readMenu(); });

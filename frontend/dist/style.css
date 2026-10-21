@@ -2,6 +2,7 @@
   --font: "Songti SC";
   --font-scale: 1;
   --line: 1.8;
+  --para: 0.6;
   --box: 0.72;
   --ink: #f2ede4;
   --accent: #c9a86a;
@@ -56,6 +57,7 @@ html, body {
   min-height: 1.3em; margin-bottom: .15em;
 }
 #text { white-space: pre-wrap; word-break: break-all; line-break: strict; }
+#text .gap, #preview .gap { display: block; height: calc(var(--para) * 1em); }
 #text .new { animation: in 260ms ease both; }
 @keyframes in { from { opacity: 0; } to { opacity: 1; } }
 #text ruby rt { font-size: .5em; color: var(--accent); }
