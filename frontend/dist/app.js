@@ -127,8 +127,23 @@ function drawText(v) {
   box.classList.remove("empty");
   $("speaker").textContent = st.speaker || "";
   // Blank lines between paragraphs become a gap of adjustable height.
-  const html = (v.before || "") + `<span class="new">${st.html}</span>`;
-  text.innerHTML = html.replace(/\n(<span class="new">)?\n/g, '<span class="gap"></span>$1');
+  const before = (v.before || "").replace(WAIT, "");
+  const html = (before + `<span class="new">${paced(st.html)}</span>`)
+    .replace(/\n+(<\/span>)+$/, (m) => m.replace(/\n/g, "")); // no blank space below the last line
+  text.innerHTML = html.replace(/\n(<span[^>]*>)?\n/g, '<span class="gap"></span>$1');
+}
+
+// {Wait(ms);} in the script pauses typing for a beat; the text after each
+// pause fades in that much later.
+const WAIT = /<i class="wait" data-ms="(\d+)"><\/i>/g;
+function paced(html) {
+  const parts = html.split(/<i class="wait" data-ms="(\d+)"><\/i>/);
+  let out = parts[0], t = 0;
+  for (let i = 1; i < parts.length; i += 2) {
+    t += +parts[i];
+    out += `<span class="later" style="animation-delay:${t}ms">${parts[i + 1]}</span>`;
+  }
+  return out;
 }
 
 // ---------- stepping ----------

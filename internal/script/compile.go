@@ -716,10 +716,31 @@ var blankLines = regexp.MustCompile(`\n(\s*\n)+`)
 
 var rubyRe = regexp.MustCompile(`<RUBY text="([^"]*)">(.*?)</RUBY>`)
 
+// textHTML escapes a text segment, turns <RUBY text="reading">base</RUBY>
+// into an HTML ruby annotation and {Wait(ms);} into a pause marker.
 func textHTML(s string) string {
-	s = html.EscapeString(s)
-	return rubyRe.ReplaceAllString(strings.ReplaceAll(s, "&#34;", `"`), "<ruby>$2<rt>$1</rt></ruby>")
+	var b strings.Builder
+	last := 0
+	for _, m := range rubyRe.FindAllStringSubmatchIndex(s, -1) {
+		b.WriteString(html.EscapeString(s[last:m[0]]))
+		fmt.Fprintf(&b, "<ruby>%s<rt>%s</rt></ruby>",
+			html.EscapeString(s[m[4]:m[5]]), html.EscapeString(s[m[2]:m[3]]))
+		last = m[1]
+	}
+	b.WriteString(html.EscapeString(s[last:]))
+	return inlineCode.ReplaceAllStringFunc(b.String(), func(m string) string {
+		if w := waitRe.FindStringSubmatch(m); w != nil {
+			return `<i class="wait" data-ms="` + w[1] + `"></i>`
+		}
+		return ""
+	})
 }
+
+// Code embedded mid-line; {Wait(ms);} pauses the typing for a beat.
+var (
+	inlineCode = regexp.MustCompile(`\{[^{}]*\}`)
+	waitRe     = regexp.MustCompile(`^\{\s*Wait\((\d+)\);?\s*\}$`)
+)
 
 func (c *compiler) pre(pb *preBlock) {
 	var buf strings.Builder

@@ -3,6 +3,7 @@ package script
 import (
 	"bytes"
 	"strings"
+	"unicode"
 
 	"golang.org/x/text/encoding/japanese"
 	"golang.org/x/text/encoding/simplifiedchinese"
@@ -27,6 +28,15 @@ func decodeGBK(b []byte) string {
 		return string(bytes.ToValidUTF8(b, []byte("?")))
 	}
 	return strings.ReplaceAll(string(s), "丂", "　")
+}
+
+func hasKana(s string) bool {
+	for _, r := range s {
+		if unicode.In(r, unicode.Hiragana, unicode.Katakana) && r != 'ー' {
+			return true
+		}
+	}
+	return false
 }
 
 // piece is either a run of script code or one <PRE> text block.
@@ -120,6 +130,12 @@ func parsePre(lines [][]byte) *preBlock {
 		}
 		// A text line; <k> splits it into click-separated segments.
 		s := decodeGBK(raw)
+		if bytes.Contains(raw, []byte("<RUBY")) {
+			// The patch missed a few ruby lines, which are still Shift-JIS.
+			if j := decodeSJIS(raw); hasKana(j) {
+				s = j
+			}
+		}
 		parts := strings.Split(s, "<k>")
 		for j, part := range parts {
 			part = strings.ReplaceAll(part, "<?>", "")
