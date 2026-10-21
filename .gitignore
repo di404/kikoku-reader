@@ -1,0 +1,5 @@
+bin/
+build/bin/
+.claude/
+交接.md
+.DS_Store

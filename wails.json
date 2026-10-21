@@ -1,0 +1,13 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "kikoku",
+  "outputfilename": "kikoku",
+  "frontend:install": "",
+  "frontend:build": "",
+  "frontend:dir": "frontend",
+  "info": {
+    "productName": "鬼哭街 阅读器",
+    "productVersion": "0.1.0",
+    "comments": "Mac reader for the 2011 Kikokugai remake (Chinese patch)"
+  }
+}
