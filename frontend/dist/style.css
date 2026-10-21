@@ -26,7 +26,7 @@ html, body {
   position: absolute; overflow: hidden; background: #000;
   isolation: isolate;
 }
-#stage .scene { position: absolute; inset: 0; transition: opacity 260ms ease; }
+#stage .scene { position: absolute; inset: 0; transition: opacity 260ms ease; will-change: opacity; }
 #stage .layer { position: absolute; transform-origin: 50% 50%; }
 #stage img.layer { image-rendering: auto; }
 
@@ -48,6 +48,7 @@ html, body {
     rgba(8,6,6,calc(var(--box) * 0.85)) 1.6em,
     rgba(8,6,6,var(--box)) 100%);
   transition: opacity 180ms ease;
+  will-change: opacity; /* own layer: not repainted while the picture fades */
   max-height: 72%;
   overflow: hidden;
 }

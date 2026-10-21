@@ -77,32 +77,44 @@ function layerEl(l, k) {
   return el;
 }
 
-function drawLayers(layers, instant) {
+// prepareLayers builds the next picture off-screen and resolves, once its
+// images are decoded, to a commit function that swaps it in. Callers commit
+// together with the text so picture and text change in the same frame.
+function prepareLayers(layers, instant) {
   const key = JSON.stringify(layers || []);
-  const stage = $("stage");
-  if (key === state.lastLayers && !instant) return;
+  if (key === state.lastLayers && !instant) return Promise.resolve(() => {});
   state.lastLayers = key;
   const scene = document.createElement("div");
   scene.className = "scene";
   for (const l of layers || []) scene.appendChild(layerEl(l, state.k));
-  const old = [...stage.querySelectorAll(".scene")];
-  if (instant || old.length === 0) {
-    old.forEach((o) => o.remove());
-    stage.appendChild(scene);
-    return;
-  }
-  scene.style.opacity = 0;
-  stage.appendChild(scene);
   const imgs = [...scene.querySelectorAll("img")];
-  const ready = Promise.all(imgs.map((i) => i.decode().catch(() => {})));
-  const timeout = new Promise((r) => setTimeout(r, 900));
-  Promise.race([ready, timeout]).then(() => {
-    requestAnimationFrame(() => {
-      scene.style.opacity = 1;
-      setTimeout(() => old.forEach((o) => o.remove()), 300);
-    });
+  const decoded = Promise.all(imgs.map((i) => i.decode().catch(() => {})));
+  const ready = instant ? Promise.resolve() : Promise.race([decoded, sleep(1500)]);
+  return ready.then(() => () => {
+    const stage = $("stage");
+    const old = [...stage.querySelectorAll(".scene")];
+    if (instant || old.length === 0) {
+      old.forEach((o) => o.remove());
+      stage.appendChild(scene);
+      return;
+    }
+    scene.style.opacity = 0;
+    stage.appendChild(scene);
+    scene.getBoundingClientRect(); // start the fade from 0
+    scene.style.opacity = 1;
+    // Drop the old picture only once the new one fully covers it.
+    let done = false;
+    const drop = () => { if (!done) { done = true; old.forEach((o) => o.remove()); } };
+    scene.addEventListener("transitionend", drop, { once: true });
+    setTimeout(drop, 700);
   });
 }
+
+function drawLayers(layers, instant) {
+  prepareLayers(layers, instant).then((commit) => commit());
+}
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const preloaded = new Map();
 function preload(list) {
@@ -110,6 +122,7 @@ function preload(list) {
     if (preloaded.has(src)) continue;
     const img = new Image();
     img.src = "/res/" + encodeURI(src);
+    img.decode().catch(() => {}); // decode now so the switch does not wait
     preloaded.set(src, img);
     if (preloaded.size > 40) preloaded.delete(preloaded.keys().next().value);
   }
@@ -156,8 +169,8 @@ async function show(i, jumped) {
     const v = await api().Show(i, !!jumped);
     state.view = v;
     state.index = i;
-    drawLayers(v.step.layers, jumped);
-    drawText(v);
+    const commit = await prepareLayers(v.step.layers, jumped);
+    await new Promise((r) => requestAnimationFrame(() => { commit(); drawText(v); r(); }));
     preload(v.next);
     if (!jumped && v.step.movies && v.step.movies.length) playMovie(v.step.movies[0].src);
   } catch (e) {
